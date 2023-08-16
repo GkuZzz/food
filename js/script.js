@@ -284,10 +284,12 @@ window.addEventListener('DOMContentLoaded', () => {
             statusMessage.textContent = message.loading;
             form.append(statusMessage);
 
-            const request = new XMLHttpRequest(); // создание запроса
-            request.open('POST', 'server.php'); // настройка запроса
-
+            // const request = new XMLHttpRequest(); // создание запроса
+            // request.open('POST', 'server.php'); // настройка запроса
             // request.setRequestHeader('Content-type', 'application/json')
+
+
+            
 
             const formData = new FormData(form);
 
@@ -296,24 +298,26 @@ window.addEventListener('DOMContentLoaded', () => {
                 object[key] = value;
             });
 
-            const json = JSON.stringify(object);
-            request.send(json);
+            // request.send(json);
 
 
-            // request.send(formData)
-
-            request.addEventListener('load', () => {
-                if (request.status === 200) {
-                    console.log(request.response)
-                    showThanksModal(message.success)
-                    form.reset();
-                    statusMessage.remove()
-                    
-                } else {
-                    showThanksModal(message.fail)
-                }
+            fetch('server.php', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify(object)
+            }).then(data => data.text())
+            .then(data => {
+                console.log(data)
+                showThanksModal(message.success)
+                 form.reset();
+                 statusMessage.remove()
+            }).catch(() => {
+                showThanksModal(message.fail)
+            }).finally(() => {
+                form.reset();
             })
-
         })
         
     }
@@ -343,6 +347,16 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // fetch('https://jsonplaceholder.typicode.com/posts', {
+    //     method: "POST",
+    //     body: JSON.stringify({name: 'Gleb'}),
+    //     headers: {
+    //         'Content-type': 'application/json'
+    //     }
+    // }) // Классический гет запрос
+    //   .then(response => response.json())   // возврвщается промис в формате JSON
+    //   .then(json => console.log(json))     
+    
 
 
 
