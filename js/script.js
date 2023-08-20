@@ -1,3 +1,5 @@
+// const { url } = require("inspector");
+
 window.addEventListener('DOMContentLoaded', () => {
 
 
@@ -226,139 +228,103 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    new MenuCard(
-        "img/tabs/vegy.jpg",
-        "vegy",
-        'Меню "Фитнес"',
-        'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        '.menu .container',
+    const getResource = async (url) => {
+        const res = await fetch(url);
 
-    ).render();
+        if (!res.ok) {
+            throw new Error(`Could not fetch ${url}, status ${res.status}`)
+        }
 
+        return await res.json()  // возвращаем промис!!!!
+    }
 
-    new MenuCard(
-        "img/tabs/elite.jpg",
-        "elite",
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан',
-        10,
-        '.menu .container',
-
-    ).render();
-
-
-    new MenuCard(
-        "img/tabs/post.jpg",
-        "post",
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-        8,
-        '.menu .container',
-
-    ).render();
-
-
+    getResource('http://localhost:3000/menu')
+    .then(data => {
+        data.forEach(({img, altimg, title, descr, price}) => {
+            new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+        });
+    });
     
     // ФОРМЫ!
 
+
+
     const forms = document.querySelectorAll('form');
-    forms.forEach(item => {
-        postData(item)
-    });
 
 
     const message = {
-        loading: 'загрузка',
-        success: 'спасибо, мы с вами свяжемся',
+        loading: 'Загрузка',
+        success: 'Cпасибо, мы с вами свяжемся',
         fail: 'Cломалось'
+    };
+
+    forms.forEach(item => {
+        bindPostData(item)
+    });
+
+
+    const postData = async (url, data) => {
+        const res = await fetch(url,{
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+            },
+            body: data
+        })
+
+        return await res.json()  // возвращаем промис!!!!
     }
 
-    function postData(form) {
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
-
             const statusMessage = document.createElement('div');
-            statusMessage.classList.add('status');
-            statusMessage.textContent = message.loading;
+            statusMessage.classList.add('status')
+            statusMessage.textContent = message.loading;   
             form.append(statusMessage);
 
-            // const request = new XMLHttpRequest(); // создание запроса
-            // request.open('POST', 'server.php'); // настройка запроса
-            // request.setRequestHeader('Content-type', 'application/json')
+           
+           
 
 
-            
-
-            const formData = new FormData(form);
-
-            const object = {};
-            formData.forEach((value, key) => {
-                object[key] = value;
-            });
-
-            // request.send(json);
+            const formData = new FormData(form); // объект formData в который передается форма(всегда проверяем name у формы)
 
 
-            fetch('server.php', {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json'
-                },
-                body: JSON.stringify(object)
-            }).then(data => data.text())
+            // Трансформация formData в JSON
+            const json = JSON.stringify(Object.fromEntries(formData.entries()));
+
+
+            postData('http://localhost:3000/requests', json)
             .then(data => {
-                console.log(data)
-                showThanksModal(message.success)
-                 form.reset();
-                 statusMessage.remove()
+                console.log(data);
+                statusMessage.textContent = message.success;
+                statusMessage.remove()
             }).catch(() => {
-                showThanksModal(message.fail)
+                statusMessage.textContent = message.fail;
             }).finally(() => {
                 form.reset();
             })
+
         })
-        
-    }
-
-    function showThanksModal(message) {    
-        const prevModalDialog = document.querySelector('.modal__dialog');
-        prevModalDialog.style.display = 'none';
-        openModal();
-
-        const thanksModal = document.createElement('div')
-        thanksModal.classList.add('.modal__dialog');
-
-        thanksModal.innerHTML = `
-            <div class="modal__content">
-                <div class="modal__close" data-close>&times;</div>
-                <div class="modal__title">${message}</div>
-            </div>
-        `;
-
-        document.querySelector('.modal').append(thanksModal);
-
-        setTimeout(() => {
-            thanksModal.remove();
-            prevModalDialog.style.display = 'block';
-            closeModal();
-        }, 4000) 
     }
 
 
-    // fetch('https://jsonplaceholder.typicode.com/posts', {
-    //     method: "POST",
-    //     body: JSON.stringify({name: 'Gleb'}),
-    //     headers: {
-    //         'Content-type': 'application/json'
-    //     }
-    // }) // Классический гет запрос
-    //   .then(response => response.json())   // возврвщается промис в формате JSON
-    //   .then(json => console.log(json))     
     
-
-
-
-
 });
+
+
+
+
+
+
+
+// fetch('https://jsonplaceholder.typicode.com/posts', { /// возвращается Promise
+//     method: 'POST',
+//     body: JSON.stringify({name: 'Gleb'}),
+//     headers: {
+//         'Content-type': 'application/json'
+//     }
+// })  
+//       .then(response => response.json())                /// Получаем ответ в формате JSON  => c помощью .json() превращаем json в объект и возвращает promise
+//       .then(json => console.log(json))                  /// Выводим объект в консоль
